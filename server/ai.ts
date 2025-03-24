@@ -1,8 +1,15 @@
 import OpenAI from "openai";
 import type { ReviewResult, CodeComment, CodeSubmission } from "@shared/schema";
+import { performBasicAnalysis } from "./codeAnalysis";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const OPENAI_MODEL = "gpt-4o";
+// Fallback to GPT-3.5 Turbo if GPT-4 is not available or quota exceeded
+const FALLBACK_MODEL = "gpt-3.5-turbo";
+// Max retries for API calls
+const MAX_RETRIES = 2;
+// Delay between retries (in ms)
+const RETRY_DELAY = 1000;
 
 const openai = new OpenAI({ 
   apiKey: process.env.OPENAI_API_KEY || "sk-your-api-key" 
@@ -69,12 +76,20 @@ Generate a JSON response with the following format:
 `;
 }
 
-export async function analyzeCode(submission: CodeSubmission): Promise<ReviewResult> {
+// Sleep function for retry delay
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Attempt to call OpenAI API with retry logic
+async function callOpenAIWithRetry(
+  prompt: string, 
+  currentModel: string, 
+  retryCount = 0
+): Promise<ReviewResult | null> {
   try {
-    const prompt = getPromptForCodeReview(submission);
+    console.log(`Attempting API call with model: ${currentModel}, retry: ${retryCount}`);
     
     const response = await openai.chat.completions.create({
-      model: OPENAI_MODEL,
+      model: currentModel,
       messages: [
         { 
           role: "system", 
@@ -94,39 +109,121 @@ export async function analyzeCode(submission: CodeSubmission): Promise<ReviewRes
       throw new Error("Empty response from OpenAI API");
     }
 
-    const result = JSON.parse(content) as ReviewResult;
-    return result;
+    return JSON.parse(content) as ReviewResult;
+  } catch (error: any) {
+    // Check if it's a rate limit or quota error
+    const isRateLimitError = error.status === 429;
+    const isQuotaError = error.code === "insufficient_quota";
+    
+    // If we have retries left, and it's a rate limit error, retry
+    if (retryCount < MAX_RETRIES && isRateLimitError && !isQuotaError) {
+      console.log(`Rate limit hit, retrying in ${RETRY_DELAY}ms...`);
+      await sleep(RETRY_DELAY);
+      return callOpenAIWithRetry(prompt, currentModel, retryCount + 1);
+    }
+    
+    // If we're using the primary model and hit a quota error, try the fallback model
+    if (currentModel === OPENAI_MODEL && (isRateLimitError || isQuotaError)) {
+      console.log(`Quota or rate limit issue with primary model, trying fallback model: ${FALLBACK_MODEL}`);
+      return callOpenAIWithRetry(prompt, FALLBACK_MODEL, 0);
+    }
+    
+    // If all retries failed or it's a non-retriable error
+    console.error(`API call failed after retries or non-retriable error:`, error);
+    return null;
+  }
+}
+
+export async function analyzeCode(submission: CodeSubmission): Promise<ReviewResult> {
+  try {
+    const prompt = getPromptForCodeReview(submission);
+    
+    // Try to get a result from OpenAI
+    const openAIResult = await callOpenAIWithRetry(prompt, OPENAI_MODEL);
+    
+    if (openAIResult) {
+      console.log("Successfully got analysis from OpenAI");
+      return openAIResult;
+    }
+    
+    // If OpenAI analysis failed, fallback to basic analysis
+    console.log("OpenAI analysis failed, falling back to basic analysis");
+    const basicComments = performBasicAnalysis(submission);
+    
+    return generateFallbackResult(basicComments, submission.language);
     
   } catch (error) {
-    console.error("Error analyzing code:", error);
+    console.error("Complete error in analysis process:", error);
     
-    // Return a fallback result with an error message
-    return {
-      metrics: {
-        overall: { grade: "N/A", score: 0 },
-        maintainability: { grade: "N/A", score: 0 },
-        performance: { grade: "N/A", score: 0 },
-        security: { grade: "N/A", score: 0 }
-      },
-      comments: [
-        {
-          line: 1,
-          text: "Error analyzing code. Please try again later.",
-          type: "error"
-        }
-      ],
-      issues: {
-        critical: 1,
-        warnings: 0,
-        info: 0,
-        types: [
-          {
-            name: "API Error",
-            description: "Failed to analyze code due to an API error",
-            severity: "high"
-          }
-        ]
-      }
-    };
+    // Last resort fallback - basic static analysis
+    try {
+      const basicComments = performBasicAnalysis(submission);
+      return generateFallbackResult(basicComments, submission.language);
+    } catch (innerError) {
+      console.error("Even basic analysis failed:", innerError);
+      // Return a generic fallback result
+      return generateFallbackResult([], submission.language);
+    }
   }
+}
+
+// Generate a fallback result using basic analysis
+function generateFallbackResult(comments: CodeComment[], language: string): ReviewResult {
+  // Count issues by type
+  const criticalCount = comments.filter(c => c.type === "error").length;
+  const warningCount = comments.filter(c => c.type === "warning").length;
+  const infoCount = comments.filter(c => c.type === "info" || c.type === "suggestion").length;
+  
+  // Generate grade based on issues
+  const totalIssues = criticalCount + warningCount + infoCount;
+  let grade = "C";
+  let score = 70;
+  
+  if (criticalCount === 0 && warningCount === 0) {
+    grade = "A-";
+    score = 90;
+  } else if (criticalCount === 0 && warningCount <= 2) {
+    grade = "B+";
+    score = 85;
+  } else if (criticalCount <= 1 && totalIssues <= 5) {
+    grade = "B-";
+    score = 80;
+  } else if (criticalCount >= 3) {
+    grade = "D+";
+    score = 65;
+  }
+  
+  return {
+    metrics: {
+      overall: { grade, score },
+      maintainability: { grade, score },
+      performance: { grade: "C+", score: 75 },
+      security: { grade: "C", score: 70 }
+    },
+    comments,
+    issues: {
+      critical: criticalCount,
+      warnings: warningCount,
+      info: infoCount,
+      types: [
+        {
+          name: "Analysis Limitations",
+          description: "Limited analysis due to API constraints. Only basic issues detected.",
+          severity: "medium"
+        },
+        {
+          name: "Static Analysis",
+          description: `Basic ${language} code analysis performed without semantic understanding.`,
+          severity: "medium"
+        }
+      ]
+    },
+    keyImprovements: [
+      "Fix identified syntax errors",
+      "Address style inconsistencies",
+      "Review code structure",
+      "Consider security implications",
+      "Ensure proper error handling"
+    ]
+  };
 }

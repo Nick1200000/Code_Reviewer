@@ -49,11 +49,21 @@ export class MemStorage implements IStorage {
 
   async createReview(insertReview: InsertReview): Promise<Review> {
     const id = this.reviewIdCounter++;
+    // Extract and process properties individually to ensure correct types
+    const { language, reviewType, code, results } = insertReview;
+    const userId = insertReview.userId ?? null;
+    
+    // Construct the review object with explicit typing
     const review: Review = { 
-      ...insertReview, 
-      id, 
-      createdAt: new Date() 
+      id,
+      language, 
+      reviewType,
+      code,
+      results,
+      createdAt: new Date(),
+      userId
     };
+    
     this.reviews.set(id, review);
     return review;
   }

@@ -1,6 +1,8 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 
 export default function Header() {
+  const [location] = useLocation();
+  
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -14,30 +16,26 @@ export default function Header() {
             </div>
             <nav className="hidden md:ml-6 md:flex md:space-x-8">
               <Link href="/">
-                {({ isActive }) => (
-                  <a
-                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                      isActive
-                        ? "border-primary-500 text-gray-900"
-                        : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                    }`}
-                  >
-                    Home
-                  </a>
-                )}
+                <a
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                    location === "/"
+                      ? "border-primary-500 text-gray-900"
+                      : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  }`}
+                >
+                  Home
+                </a>
               </Link>
               <Link href="/history">
-                {({ isActive }) => (
-                  <a
-                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                      isActive
-                        ? "border-primary-500 text-gray-900"
-                        : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                    }`}
-                  >
-                    History
-                  </a>
-                )}
+                <a
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                    location === "/history"
+                      ? "border-primary-500 text-gray-900"
+                      : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  }`}
+                >
+                  History
+                </a>
               </Link>
               <a
                 href="#"
