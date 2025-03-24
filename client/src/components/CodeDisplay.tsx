@@ -25,8 +25,8 @@ export default function CodeDisplay({ code, language, comments }: CodeDisplayPro
         
         // Load specific language if needed
         try {
-          // @vite-ignore
           if (language.toLowerCase() !== 'javascript' && language.toLowerCase() !== 'python') {
+            // @vite-ignore
             await import(`highlight.js/lib/languages/${language.toLowerCase()}`);
           }
         } catch (e) {
