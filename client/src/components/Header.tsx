@@ -18,8 +18,8 @@ export default function Header() {
             </div>
             <nav className="hidden md:ml-8 md:flex md:space-x-6">
               <Link href="/">
-                <a
-                  className={`inline-flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                <div
+                  className={`inline-flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
                     location === "/"
                       ? "bg-blue-50 text-blue-700"
                       : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
@@ -29,11 +29,11 @@ export default function Header() {
                     <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
                   </svg>
                   Home
-                </a>
+                </div>
               </Link>
               <Link href="/history">
-                <a
-                  className={`inline-flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                <div
+                  className={`inline-flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
                     location === "/history"
                       ? "bg-blue-50 text-blue-700"
                       : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
@@ -43,11 +43,11 @@ export default function Header() {
                     <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" />
                   </svg>
                   History
-                </a>
+                </div>
               </Link>
               <Link href="/documentation">
-                <a
-                  className={`inline-flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                <div
+                  className={`inline-flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
                     location === "/documentation"
                       ? "bg-blue-50 text-blue-700"
                       : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
@@ -57,7 +57,7 @@ export default function Header() {
                     <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
                   </svg>
                   Documentation
-                </a>
+                </div>
               </Link>
             </nav>
           </div>
