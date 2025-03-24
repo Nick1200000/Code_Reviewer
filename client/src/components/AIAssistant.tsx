@@ -288,6 +288,11 @@ export default function AIAssistant({ code, language, result }: AIAssistantProps
         };
         
         setMessages(prev => [...prev, assistantMessage]);
+        
+        // Auto-scroll to the bottom
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
       } catch (error) {
         console.error("Error generating AI response:", error);
         setHasApiError(true);
@@ -306,10 +311,15 @@ export default function AIAssistant({ code, language, result }: AIAssistantProps
           description: "There was an issue connecting to the OpenAI API. Please check your API key and quota.",
           variant: "destructive"
         });
+        
+        // Auto-scroll to the bottom
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
       } finally {
         setIsLoading(false);
       }
-    }, 1000);
+    }, 500); // Reduced delay for quicker response
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -323,40 +333,15 @@ export default function AIAssistant({ code, language, result }: AIAssistantProps
     setInputValue(question);
   };
 
-  // Check for API errors in browser logs
+  // Initialize with API error state
   useEffect(() => {
-    const checkForApiErrors = () => {
-      try {
-        // Check if OpenAI API errors are present in console logs (for demo purposes)
-        // In a real app, you would check a state or make an API health check
-        if (window.console && window.console.error) {
-          const originalConsoleError = window.console.error;
-          window.console.error = function(...args) {
-            const errorString = args.join(' ');
-            if (
-              errorString.includes('OpenAI') || 
-              errorString.includes('API') || 
-              errorString.includes('429') ||
-              errorString.includes('quota')
-            ) {
-              setHasApiError(true);
-            }
-            originalConsoleError.apply(console, args);
-          };
-        }
-      } catch (e) {
-        // Ignore errors from this check
-      }
-    };
-    
-    checkForApiErrors();
-    
     // Set hasApiError to true for this demonstration since we know there's an API issue
     setHasApiError(true);
     
-    return () => {
-      // Clean up if needed
-    };
+    // To actually detect API errors in production, we would:
+    // 1. Make a health check API call to verify OpenAI connectivity
+    // 2. Check for error responses 
+    // 3. Set the appropriate state
   }, []);
 
   return (
