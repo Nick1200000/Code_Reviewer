@@ -6,6 +6,16 @@ import AIRecommendations from "./AIRecommendations";
 import IssuesBreakdown from "./IssuesBreakdown";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { 
+  downloadTextReport, 
+  downloadPdfReport 
+} from "@/lib/reportGenerator";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface ReviewResultsProps {
   code: string;
@@ -49,58 +59,38 @@ export default function ReviewResults({ code, language, reviewType, result }: Re
     );
   };
 
-  const handleDownloadReport = () => {
-    // Create a report text
-    const reportDate = new Date().toLocaleString();
-    let reportContent = `AI Code Review Report - ${reportDate}\n\n`;
-    reportContent += `Language: ${language}\n`;
-    reportContent += `Review Type: ${reviewType}\n\n`;
-    
-    reportContent += `Overall Quality: ${result.metrics.overall.grade}\n`;
-    reportContent += `Maintainability: ${result.metrics.maintainability.grade}\n`;
-    reportContent += `Performance: ${result.metrics.performance.grade}\n`;
-    reportContent += `Security: ${result.metrics.security.grade}\n\n`;
-    
-    reportContent += `Issues Found:\n`;
-    reportContent += `- Critical: ${result.issues.critical}\n`;
-    reportContent += `- Warnings: ${result.issues.warnings}\n`;
-    reportContent += `- Info: ${result.issues.info}\n\n`;
-    
-    reportContent += `Comments:\n`;
-    result.comments.forEach(comment => {
-      reportContent += `Line ${comment.line} - ${comment.type.toUpperCase()}: ${comment.text}\n`;
-      if (comment.suggestion) {
-        reportContent += `  Suggestion: ${comment.suggestion}\n`;
-      }
-      reportContent += `\n`;
-    });
-    
-    if (result.improvedCode) {
-      reportContent += `Improved Code:\n\n${result.improvedCode}\n\n`;
-    }
-    
-    if (result.keyImprovements) {
-      reportContent += `Key Improvements:\n`;
-      result.keyImprovements.forEach(improvement => {
-        reportContent += `- ${improvement}\n`;
+  const handleTextReport = () => {
+    try {
+      downloadTextReport(code, language, reviewType, result);
+      toast({
+        title: "Report downloaded",
+        description: "Your code review report has been downloaded as a text file.",
+      });
+    } catch (error) {
+      console.error("Failed to download text report:", error);
+      toast({
+        title: "Download failed",
+        description: "Failed to download the report. Please try again.",
+        variant: "destructive",
       });
     }
-    
-    // Create and download the file
-    const blob = new Blob([reportContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `code-review-${new Date().toISOString().slice(0, 10)}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    toast({
-      title: "Report downloaded",
-      description: "Your code review report has been downloaded.",
-    });
+  };
+
+  const handlePdfReport = async () => {
+    try {
+      await downloadPdfReport(code, language, reviewType, result);
+      toast({
+        title: "PDF Report",
+        description: "Your PDF report is being prepared. If prompted, please allow popups.",
+      });
+    } catch (error) {
+      console.error("Failed to download PDF report:", error);
+      toast({
+        title: "PDF Generation Failed",
+        description: "Failed to generate PDF. Please try the text report option instead.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -146,15 +136,31 @@ export default function ReviewResults({ code, language, reviewType, result }: Re
       {/* Action Buttons */}
       <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 flex flex-wrap gap-3 justify-between">
         <div className="flex flex-wrap gap-3">
-          <Button 
-            onClick={handleDownloadReport}
-            className="inline-flex items-center"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-            Download Report
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="inline-flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+                Export Report
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={handleTextReport}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Text Format (.txt)</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handlePdfReport}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                <span>PDF Format</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
           <Button 
             variant="secondary"
             onClick={handleCopyFixedCode}
@@ -168,6 +174,7 @@ export default function ReviewResults({ code, language, reviewType, result }: Re
             {copied ? "Copied!" : "Copy Fixed Code"}
           </Button>
         </div>
+        
         <Button 
           variant="outline"
           className="inline-flex items-center"
