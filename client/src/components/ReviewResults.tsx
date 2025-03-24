@@ -4,6 +4,7 @@ import CodeDisplay from "./CodeDisplay";
 import CodeQualitySummary from "./CodeQualitySummary";
 import AIRecommendations from "./AIRecommendations";
 import IssuesBreakdown from "./IssuesBreakdown";
+import AIAssistant from "./AIAssistant";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -175,21 +176,7 @@ export default function ReviewResults({ code, language, reviewType, result }: Re
           </Button>
         </div>
         
-        <Button 
-          variant="outline"
-          className="inline-flex items-center"
-          onClick={() => {
-            toast({
-              title: "AI Assistant",
-              description: "AI Assistant functionality is coming soon!",
-            });
-          }}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-          </svg>
-          Ask AI Assistant
-        </Button>
+        <AIAssistant code={code} language={language} result={result} />
       </div>
     </div>
   );
