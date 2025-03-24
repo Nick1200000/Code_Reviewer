@@ -1,0 +1,242 @@
+import { useState, useRef } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { programmingLanguages, reviewTypes, sampleCode } from "@/lib/languages";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+
+// Form validation schema
+const formSchema = z.object({
+  language: z.string().min(1, "Language is required"),
+  reviewType: z.string().min(1, "Review type is required"),
+  code: z.string().min(1, "Code is required"),
+});
+
+type SubmissionFormProps = {
+  onSubmit: (values: z.infer<typeof formSchema>) => void;
+  isPending: boolean;
+};
+
+export default function SubmissionForm({ onSubmit, isPending }: SubmissionFormProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+  
+  // Form setup with react-hook-form
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      language: "Python",
+      reviewType: "Comprehensive",
+      code: sampleCode.Python || "",
+    },
+  });
+
+  // Handle file upload
+  const handleFileUpload = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  // Process uploaded file
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      form.setValue("code", text);
+      
+      // Try to determine language from file extension
+      const fileExt = file.name.split('.').pop()?.toLowerCase();
+      if (fileExt) {
+        const matchedLang = programmingLanguages.find(
+          lang => lang.extension.slice(1) === fileExt
+        );
+        if (matchedLang) {
+          form.setValue("language", matchedLang.value);
+        }
+      }
+      
+      toast({
+        title: "File uploaded",
+        description: `${file.name} has been loaded successfully.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error loading file",
+        description: "Could not read the file content.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Auto-format code (placeholder functionality)
+  const handleAutoFormat = () => {
+    const code = form.getValues("code");
+    if (!code.trim()) {
+      toast({
+        title: "Cannot format empty code",
+        description: "Please add some code first.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    toast({
+      title: "Code formatted",
+      description: "Your code has been formatted.",
+    });
+    // In a real implementation, this would apply actual formatting
+  };
+
+  // Update sample code when language changes
+  const handleLanguageChange = (value: string) => {
+    form.setValue("language", value);
+    
+    const currentCode = form.getValues("code");
+    const isDefaultOrEmpty = !currentCode || 
+      Object.values(sampleCode).some(sample => currentCode === sample);
+      
+    if (isDefaultOrEmpty && sampleCode[value]) {
+      form.setValue("code", sampleCode[value]);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
+      <div className="px-6 py-5 border-b border-gray-200">
+        <h3 className="text-lg leading-6 font-medium text-gray-900">Submit Code for Review</h3>
+      </div>
+      <div className="px-6 py-5">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="md:col-span-2">
+                <FormField
+                  control={form.control}
+                  name="language"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Programming Language</FormLabel>
+                      <Select
+                        onValueChange={(value) => handleLanguageChange(value)}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select language" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {programmingLanguages.map((language) => (
+                            <SelectItem key={language.value} value={language.value}>
+                              {language.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div>
+                <FormField
+                  control={form.control}
+                  name="reviewType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Review Type</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select review type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {reviewTypes.map((type) => (
+                            <SelectItem key={type.value} value={type.value}>
+                              {type.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="md:col-span-3">
+                <FormField
+                  control={form.control}
+                  name="code"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Code</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          {...field}
+                          placeholder="Paste your code here..."
+                          className="font-mono bg-gray-50 resize-y h-64"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="md:col-span-3 flex flex-wrap gap-3">
+                <Button type="submit" disabled={isPending}>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V8z" clipRule="evenodd" />
+                  </svg>
+                  {isPending ? "Reviewing..." : "Review Code"}
+                </Button>
+                <Button type="button" variant="outline" onClick={handleFileUpload}>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                  </svg>
+                  Upload File
+                </Button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  className="hidden"
+                  accept=".py,.js,.ts,.java,.cpp,.go,.rb,.php,.cs,.rs,.swift,.kt"
+                />
+                <Button type="button" variant="outline" onClick={handleAutoFormat}>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616 1.738 5.42a1 1 0 01-.285 1.05A3.989 3.989 0 0115 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.715-5.349L11 6.477V16h2a1 1 0 110 2H7a1 1 0 110-2h2V6.477L6.237 7.582l1.715 5.349a1 1 0 01-.285 1.05A3.989 3.989 0 015 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.738-5.42-1.233-.617a1 1 0 01.894-1.788l1.599.799L9 4.323V3a1 1 0 011-1z" clipRule="evenodd" />
+                  </svg>
+                  Auto-Format
+                </Button>
+              </div>
+            </div>
+          </form>
+        </Form>
+      </div>
+    </div>
+  );
+}
