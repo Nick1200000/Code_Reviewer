@@ -5,6 +5,7 @@ import CodeQualitySummary from "./CodeQualitySummary";
 import AIRecommendations from "./AIRecommendations";
 import IssuesBreakdown from "./IssuesBreakdown";
 import AIAssistant from "./AIAssistant";
+import GitLabIntegration from "./GitLabIntegration";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -132,6 +133,9 @@ export default function ReviewResults({ code, language, reviewType, result }: Re
         
         {/* Issues Breakdown */}
         <IssuesBreakdown issues={result.issues} />
+        
+        {/* GitLab Integration */}
+        <GitLabIntegration result={result} />
       </div>
       
       {/* Action Buttons */}

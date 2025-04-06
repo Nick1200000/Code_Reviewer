@@ -141,9 +141,9 @@ export type ReviewResult = {
     }[];
   };
   gitlabIntegration?: {
-    projectId?: number;
-    mergeRequestId?: number;
-    commitSha?: string;
+    projectId?: number | null;
+    mergeRequestId?: number | null;
+    commitSha?: string | null;
     reviewUrl?: string;
     commentIds?: number[];
   };

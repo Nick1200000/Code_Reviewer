@@ -7,7 +7,8 @@ import {
   codeSubmissionSchema, 
   type CodeSubmission, 
   gitlabConfigSchema,
-  gitlabMergeRequestSchema
+  gitlabMergeRequestSchema,
+  type ReviewResult
 } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import GitLabApi from "./gitlab";
@@ -213,16 +214,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const commentResults = await gitlab.postCodeReviewComments(
         review.gitlabProjectId,
         review.gitlabMergeRequestId,
-        review.results.comments
+        (review.results as ReviewResult).comments
       );
       
       // Update the review with comment IDs
-      review.results.gitlabIntegration = {
-        ...review.results.gitlabIntegration,
-        commentIds: commentResults.map(c => c.id)
-      };
-      
-      // In a real app, we would update the review in the database
+      const commentIds = commentResults.map(c => c.id);
+      await storage.updateReviewGitlabInfo(reviewId, commentIds);
       
       return res.status(200).json({ 
         success: true,
