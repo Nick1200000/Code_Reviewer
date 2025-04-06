@@ -30,12 +30,27 @@ export function useCodeReview() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/reviews"] });
     },
-    onError: (error) => {
-      toast({
-        title: "Review Failed",
-        description: error.message || "Failed to submit code for review",
-        variant: "destructive",
-      });
+    onError: (error: any) => {
+      console.error("Review error:", error);
+      
+      // Check if the error has a response with a missingKey field
+      if (error.response?.data?.missingKey) {
+        // We'll let the useApiKeySetup hook handle this, but still show a toast
+        const service = error.response?.data?.missingKey === 'HUGGINGFACE_API_KEY' ? 'Hugging Face' : 'OpenAI';
+        toast({
+          title: `${service} API Key Required`,
+          description: `A valid ${service} API key is required for code analysis. Please enter your API key in the dialog.`,
+          variant: "destructive",
+          duration: 6000,
+        });
+        // The error will be passed to the component where handleMissingApiKey will process it
+      } else {
+        toast({
+          title: "Review Failed",
+          description: error.message || "Failed to submit code for review",
+          variant: "destructive",
+        });
+      }
     },
   });
 

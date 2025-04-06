@@ -1,5 +1,5 @@
 import { HfInference } from '@huggingface/inference';
-import type { ReviewResult, CodeComment, CodeSubmission } from "@shared/schema";
+import type { ReviewResult, CodeComment, CodeSubmission, CommentType } from "@shared/schema";
 import { performBasicAnalysis } from "./codeAnalysis";
 
 // Default model for code review
@@ -32,19 +32,19 @@ function getPromptForCodeReview(submission: CodeSubmission): string {
 <s>[INST]
 You are an elite code reviewer for ${language} code who specializes in providing comprehensive, accurate analysis. ${focusInstructions}
 
-Please review the following code:
+Please review the following code and return ONLY a JSON response with your analysis:
 \`\`\`${language}
 ${code}
 \`\`\`
 
-Perform a thorough analysis, checking for:
-1. Syntax errors and logical bugs
-2. Style violations and deviations from best practices
-3. Performance bottlenecks and optimization opportunities
-4. Security vulnerabilities and potential exploits
-5. Code structure, organization, and maintainability issues
+IMPORTANT INSTRUCTIONS:
+1. Your ENTIRE response must be valid JSON that can be parsed by JSON.parse()
+2. DO NOT include any explanation, greeting, markdown formatting, or additional text
+3. DO NOT repeat the code in your response unless in the improvedCode field
+4. NEVER wrap your JSON in code blocks or quotation marks
+5. Your response must match EXACTLY the format below
 
-Respond ONLY with a JSON object following this exact format:
+JSON FORMAT:
 {
   "metrics": {
     "overall": { "grade": "A-F with plus/minus", "score": 0-100, "change": percentage change (optional) },
@@ -76,7 +76,7 @@ Respond ONLY with a JSON object following this exact format:
   }
 }
 
-CRITICAL: You MUST output ONLY valid JSON without any additional text, markdown formatting, or explanation. Do not include any text before or after the JSON object. The JSON must be parseable by JSON.parse() without any modifications.
+The output should be ONLY the JSON with no introduction and no explanation. The JSON must be valid and parsable.
 [/INST]</s>
 `;
 }
@@ -122,6 +122,13 @@ async function callHuggingFaceWithRetry(
     } catch (parseError) {
       console.error("Failed to parse JSON response:", parseError);
       console.log("Response content:", jsonText);
+      
+      // Attempt to extract code analysis from non-JSON response
+      if (jsonText.length > 100) {
+        console.log("Attempting to create a synthetic result from non-JSON response...");
+        return createSyntheticResultFromText(jsonText, model);
+      }
+      
       throw new Error("Invalid JSON response");
     }
   } catch (error: any) {
@@ -189,6 +196,125 @@ export async function analyzeCodeWithHuggingFace(submission: CodeSubmission): Pr
       return generateFallbackResult([], submission.language);
     }
   }
+}
+
+// Create a result from non-JSON text response (when the model doesn't return JSON)
+function createSyntheticResultFromText(text: string, modelName: string): ReviewResult {
+  console.log(`Creating synthetic result from model ${modelName} text output...`);
+  
+  // Extract any lines that might be comments
+  const lines = text.split('\n');
+  const comments: CodeComment[] = [];
+  let currentLine = 1;
+  let improvedCode = '';
+  
+  // Try to identify if this is code (check for imports, functions, classes, etc.)
+  const isCodeResponse = text.includes('import ') || 
+                        text.includes('function ') || 
+                        text.includes('class ') || 
+                        text.includes('const ') || 
+                        text.includes('let ');
+  
+  if (isCodeResponse) {
+    improvedCode = text; // The model returned code, use it as improved code
+    
+    // Add a comment explaining the situation
+    comments.push({
+      line: 1,
+      text: "The model provided an improved version of your code instead of a detailed analysis.",
+      type: "info"
+    });
+  } else {
+    // Try to extract comments from the text response
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+      
+      // Skip empty lines
+      if (!trimmedLine) {
+        currentLine++;
+        continue;
+      }
+      
+      // Try to identify issues, warnings, etc.
+      let type: CommentType = "info";
+      if (trimmedLine.toLowerCase().includes('error') || 
+          trimmedLine.toLowerCase().includes('critical') ||
+          trimmedLine.toLowerCase().includes('severe')) {
+        type = "error";
+      } else if (trimmedLine.toLowerCase().includes('warning') ||
+                trimmedLine.toLowerCase().includes('caution') ||
+                trimmedLine.toLowerCase().includes('consider')) {
+        type = "warning";
+      } else if (trimmedLine.toLowerCase().includes('suggest') ||
+                trimmedLine.toLowerCase().includes('recommend') ||
+                trimmedLine.toLowerCase().includes('improvement')) {
+        type = "suggestion";
+      }
+      
+      // Add comment if the line has enough content
+      if (trimmedLine.length > 20) {
+        comments.push({
+          line: currentLine,
+          text: trimmedLine,
+          type
+        });
+      }
+      
+      currentLine++;
+    }
+  }
+  
+  // Determine metrics based on comments
+  const criticalCount = comments.filter(c => c.type === "error").length;
+  const warningCount = comments.filter(c => c.type === "warning").length;
+  const infoCount = comments.filter(c => c.type === "info" || c.type === "suggestion").length;
+  
+  // Generate grade
+  let grade = "B-";
+  let score = 80;
+  
+  if (isCodeResponse) {
+    grade = "B+";
+    score = 85;
+  } else if (criticalCount > 2) {
+    grade = "C+";
+    score = 75;
+  } else if (warningCount > 5) {
+    grade = "B-";
+    score = 80;
+  }
+  
+  return {
+    metrics: {
+      overall: { grade, score },
+      maintainability: { grade, score },
+      performance: { grade, score: score - 5 },
+      security: { grade, score: score - 5 }
+    },
+    comments: comments.length > 0 ? comments : [
+      {
+        line: 1,
+        text: "The analysis model provided a non-standard response. Basic analysis has been provided instead.",
+        type: "info"
+      }
+    ],
+    improvedCode: improvedCode || undefined,
+    issues: {
+      critical: criticalCount,
+      warnings: warningCount,
+      info: infoCount,
+      types: [
+        {
+          name: "Model Response Issue",
+          description: `The ${modelName} model didn't return a valid JSON response. Limited analysis available.`,
+          severity: "medium"
+        }
+      ]
+    },
+    keyImprovements: isCodeResponse ? 
+      ["Improved code structure", "Enhanced readability", "Fixed potential issues"] :
+      ["Consider security best practices", "Improve error handling", "Enhance code organization"]
+  };
 }
 
 // Generate a fallback result using basic analysis

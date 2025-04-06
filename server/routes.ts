@@ -18,6 +18,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API endpoint for code review
   app.post("/api/review", async (req: Request, res: Response) => {
     try {
+      // Check if Hugging Face API key is set
+      if (!process.env.HUGGINGFACE_API_KEY) {
+        return res.status(401).json({ 
+          message: "Hugging Face API key is not configured. Please set the HUGGINGFACE_API_KEY environment variable.",
+          missingKey: "HUGGINGFACE_API_KEY"
+        });
+      }
+      
       // Validate request body
       const result = codeSubmissionSchema.safeParse(req.body);
       
@@ -99,6 +107,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API Configuration Routes
+  app.post("/api/config/api-key", async (req: Request, res: Response) => {
+    try {
+      const { name, value } = req.body;
+      
+      if (!name || !value) {
+        return res.status(400).json({ message: "API key name and value are required" });
+      }
+      
+      // Validate API key name (only allow specific keys)
+      const allowedKeys = ['HUGGINGFACE_API_KEY', 'OPENAI_API_KEY'];
+      if (!allowedKeys.includes(name)) {
+        return res.status(400).json({ message: "Invalid API key name" });
+      }
+      
+      // Set the environment variable (in a real production app, this would be stored more securely)
+      process.env[name] = value;
+      
+      console.log(`API key '${name}' has been updated`);
+      
+      return res.status(200).json({ 
+        success: true, 
+        message: `${name} has been updated successfully` 
+      });
+    } catch (error) {
+      console.error("API key update error:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Failed to update API key" 
+      });
+    }
+  });
+  
   // GitLab Integration Routes
   
   // Connect to GitLab
