@@ -2,6 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { analyzeCode } from "./ai";
+import { analyzeCodeWithHuggingFace } from "./huggingface";
 import { performBasicAnalysis, mergeAnalysisResults } from "./codeAnalysis";
 import { 
   codeSubmissionSchema, 
@@ -30,8 +31,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Perform basic static analysis
       const staticAnalysisComments = performBasicAnalysis(submission);
       
-      // Get AI-powered analysis
-      const aiAnalysisResult = await analyzeCode(submission);
+      // Get AI-powered analysis using Hugging Face instead of OpenAI
+      const aiAnalysisResult = await analyzeCodeWithHuggingFace(submission);
       
       // Merge analysis results
       const finalResult = mergeAnalysisResults(aiAnalysisResult, staticAnalysisComments);

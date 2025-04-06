@@ -47,7 +47,7 @@ export function useCodeReview() {
 
   // Query to get a specific review
   const getReview = useQuery({
-    queryKey: latestReviewId ? ["/api/reviews", latestReviewId] : null,
+    queryKey: latestReviewId ? ["/api/reviews", latestReviewId] : ["/api/reviews", "empty"],
     enabled: !!latestReviewId,
   });
 
