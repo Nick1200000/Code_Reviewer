@@ -3,7 +3,9 @@ import type { ReviewResult, CodeComment, CodeSubmission } from "@shared/schema";
 import { performBasicAnalysis } from "./codeAnalysis";
 
 // Default model for code review
-const HF_MODEL = "mistralai/Mixtral-8x7B-Instruct-v0.1"; // A powerful open-source model
+const HF_MODEL = "meta-llama/Llama-2-70b-chat-hf"; // A powerful open-source model for code analysis
+// Fallback model if the primary model is not available
+const FALLBACK_HF_MODEL = "codellama/CodeLlama-34b-Instruct-hf"; // Alternative model for code analysis
 const MAX_RETRIES = 2;
 const RETRY_DELAY = 1000;
 
@@ -27,21 +29,22 @@ function getPromptForCodeReview(submission: CodeSubmission): string {
   }
 
   return `
-You are an expert code reviewer for ${language} code. ${focusInstructions}
+<s>[INST]
+You are an elite code reviewer for ${language} code who specializes in providing comprehensive, accurate analysis. ${focusInstructions}
 
-Please review the following code and provide a detailed analysis:
+Please review the following code:
 \`\`\`${language}
 ${code}
 \`\`\`
 
-Analyze the code for:
-1. Syntax errors and bugs
-2. Style issues and best practices
-3. Performance concerns
-4. Security vulnerabilities
-5. Code structure and organization
+Perform a thorough analysis, checking for:
+1. Syntax errors and logical bugs
+2. Style violations and deviations from best practices
+3. Performance bottlenecks and optimization opportunities
+4. Security vulnerabilities and potential exploits
+5. Code structure, organization, and maintainability issues
 
-Generate a JSON response with the following format:
+Respond ONLY with a JSON object following this exact format:
 {
   "metrics": {
     "overall": { "grade": "A-F with plus/minus", "score": 0-100, "change": percentage change (optional) },
@@ -51,7 +54,7 @@ Generate a JSON response with the following format:
   },
   "comments": [
     { 
-      "line": line number, 
+      "line": line number (integer), 
       "text": "detailed explanation of the issue", 
       "type": "error|warning|suggestion|info",
       "suggestion": "code suggestion to fix (optional)"
@@ -60,9 +63,9 @@ Generate a JSON response with the following format:
   "improvedCode": "Improved version of the entire code with all suggestions applied",
   "keyImprovements": ["list of key improvements made", "maximum 6 items"],
   "issues": {
-    "critical": number of critical issues,
-    "warnings": number of warnings,
-    "info": number of informational items,
+    "critical": number of critical issues (integer),
+    "warnings": number of warnings (integer),
+    "info": number of informational items (integer),
     "types": [
       {
         "name": "issue category name",
@@ -73,7 +76,8 @@ Generate a JSON response with the following format:
   }
 }
 
-IMPORTANT: Your response must be valid JSON only, with no other text before or after.
+CRITICAL: You MUST output ONLY valid JSON without any additional text, markdown formatting, or explanation. Do not include any text before or after the JSON object. The JSON must be parseable by JSON.parse() without any modifications.
+[/INST]</s>
 `;
 }
 
@@ -90,8 +94,11 @@ async function callHuggingFaceWithRetry(
       model: model,
       inputs: prompt,
       parameters: {
-        max_new_tokens: 2048,
+        max_new_tokens: 4096,
         temperature: 0.1,
+        top_p: 0.95,
+        top_k: 40,
+        repetition_penalty: 1.1,
         return_full_text: false
       }
     });
@@ -130,6 +137,13 @@ async function callHuggingFaceWithRetry(
     
     // If all retries failed or it's a non-retriable error
     console.error(`API call failed after retries or non-retriable error:`, error);
+    
+    // Check if it's a model access error (often related to permissions for the model)
+    if (error.message && error.message.includes("You don't have access to")) {
+      console.error("Model access error: You don't have permission to use this model. Using fallback analysis instead.");
+      console.error("Tip: You may need to visit huggingface.co and accept the model's terms of use with your account.");
+    }
+    
     return null;
   }
 }
@@ -147,8 +161,17 @@ export async function analyzeCodeWithHuggingFace(submission: CodeSubmission): Pr
       return huggingFaceResult;
     }
     
-    // If Hugging Face analysis failed, fallback to basic analysis
-    console.log("Hugging Face analysis failed, falling back to basic analysis");
+    // Try fallback model if the primary model fails
+    console.log(`Primary model (${HF_MODEL}) failed, trying fallback model (${FALLBACK_HF_MODEL})...`);
+    const fallbackResult = await callHuggingFaceWithRetry(prompt, FALLBACK_HF_MODEL);
+    
+    if (fallbackResult) {
+      console.log("Successfully got analysis from fallback model");
+      return fallbackResult;
+    }
+    
+    // If both models fail, fallback to basic analysis
+    console.log("All Hugging Face models failed, falling back to basic analysis");
     const basicComments = performBasicAnalysis(submission);
     
     return generateFallbackResult(basicComments, submission.language);
