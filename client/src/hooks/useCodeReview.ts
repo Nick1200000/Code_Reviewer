@@ -18,8 +18,13 @@ export function useCodeReview() {
   // Mutation to submit code for review
   const submitReview = useMutation({
     mutationFn: async (data: CodeReviewForm) => {
-      const response = await apiRequest("POST", "/api/review", data);
-      const result = await response.json();
+      const result = await apiRequest("/api/review", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      }, "json");
       return result as ReviewResult;
     },
     onSuccess: (data) => {
