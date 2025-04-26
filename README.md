@@ -5,6 +5,14 @@ An advanced AI-powered code review tool that integrates with GitLab to provide a
 
 ![CodeInsight Pro](generated-icon.png)
 
+## 📸 Screenshots
+
+![Code Review Interface](attached_assets/image_1742817710173.png)
+*Main code review interface with real-time analysis*
+
+![Improvement Suggestions](attached_assets/image_1742822268262.png)
+*AI-powered improvement suggestions and code analysis*
+
 ## 🚀 Features
 
 - **AI-Powered Analysis**: Intelligent code review using advanced AI models
