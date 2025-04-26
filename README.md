@@ -9,9 +9,6 @@ An advanced AI-powered code review tool that integrates with GitLab to provide a
 ![Code Review Interface](attached_assets/image_1745690624807.png)
 *Main code review interface with instant code analysis*
 
-![Code Submission Interface](attached_assets/Screenshot%202025-04-26%20231453.png)
-*Submit your code with language selection and review options*
-
 ![Platform Features](attached_assets/Screenshot%202025-04-26%20231522.png)
 *Transform your code quality with AI-powered analysis*
 
