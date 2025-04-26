@@ -36,7 +36,6 @@ export default function Home() {
       }, 100);
     } catch (error) {
       console.error("Error submitting code for review:", error);
-      // Error is handled by the useCodeReview hook
     }
   };
 
