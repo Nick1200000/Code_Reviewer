@@ -252,8 +252,8 @@ export default function Home() {
       <APIKeySetup
         isOpen={isApiKeyDialogOpen}
         onClose={closeApiKeyDialog}
-        serviceName={currentApiKeyService.name}
-        apiKeyName={currentApiKeyService.envVar}
+        serviceName={currentApiKeyService?.name || "API"}
+        apiKeyName={currentApiKeyService?.envVar || "API_KEY"}
         onSubmit={saveApiKey}
       />
     </div>
