@@ -1,35 +1,20 @@
-
 # AI-Powered Code Reviewer for GitLab
 
 An advanced AI-powered code review tool that integrates with GitLab to provide automated code analysis, suggestions, and quality metrics.
 
 ![CodeInsight Pro](generated-icon.png)
 
-## 📸 How It Works
+## 📸 Screenshots
 
-### 1. Code Submission Interface
-![Code Review Interface](attached_assets/image_1742817710173.png)
-*Main code review interface with real-time analysis*
+![Code Review Interface](attached_assets/image_1745690624807.png)
+*Main code review interface with instant code analysis*
 
-The interface provides:
-- Language selection dropdown for multiple programming languages
-- Review type selection (Comprehensive, Security, Performance)
-- Code input area with syntax highlighting
-- File upload capability for easy code submission
-- Auto-format functionality for clean code presentation
+![Code Submission Interface](attached_assets/Screenshot%202025-04-26%20231453.png)
+*Submit your code with language selection and review options*
 
-### 2. AI Analysis Results
-![Improvement Suggestions](attached_assets/image_1742822268262.png)
-*AI-powered improvement suggestions and code analysis*
+![Platform Features](attached_assets/Screenshot%202025-04-26%20231522.png)
+*Transform your code quality with AI-powered analysis*
 
-The analysis includes:
-- Detailed code quality metrics
-- Security vulnerability detection
-- Performance optimization suggestions
-- Best practices recommendations
-- Interactive code improvements
-- One-click code fixes
-- Downloadable reports in PDF/Text formats
 
 ## 🚀 Features
 
