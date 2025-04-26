@@ -6,6 +6,8 @@ import ReviewResults from "@/components/ReviewResults";
 import { useCodeReview, CodeReviewForm } from "@/hooks/useCodeReview";
 import type { ReviewResult } from "@shared/schema";
 import { Button } from "@/components/ui/button";
+import APIKeySetup from "@/components/APIKeySetup";
+import { useApiKeySetup } from "@/hooks/useApiKeySetup";
 
 export default function Home() {
   const { submitReview } = useCodeReview();
@@ -20,6 +22,15 @@ export default function Home() {
     reviewType: "",
     result: null,
   });
+  
+  // API Key setup handling
+  const { 
+    isApiKeyDialogOpen, 
+    currentApiKeyService, 
+    closeApiKeyDialog, 
+    saveApiKey,
+    handleMissingApiKey 
+  } = useApiKeySetup();
 
   const handleSubmit = async (values: CodeReviewForm) => {
     try {
@@ -36,7 +47,11 @@ export default function Home() {
       }, 100);
     } catch (error) {
       console.error("Error submitting code for review:", error);
-      // Error is handled by the useCodeReview hook
+      
+      // Check if error is related to missing API key
+      if (!handleMissingApiKey(error)) {
+        // If it's not an API key issue, just log it (already handled by the useCodeReview hook)
+      }
     }
   };
 
@@ -232,6 +247,15 @@ export default function Home() {
       </main>
       
       <Footer />
+      
+      {/* API Key Setup Dialog */}
+      <APIKeySetup
+        isOpen={isApiKeyDialogOpen}
+        onClose={closeApiKeyDialog}
+        serviceName={currentApiKeyService?.name || "API"}
+        apiKeyName={currentApiKeyService?.envVar || "API_KEY"}
+        onSubmit={saveApiKey}
+      />
     </div>
   );
 }
