@@ -1,50 +1,33 @@
-# CodeInsight Pro: AI-Powered Code Review Platform
+
+# AI-Powered Code Reviewer for GitLab
+
+An advanced AI-powered code review tool that integrates with GitLab to provide automated code analysis, suggestions, and quality metrics.
 
 ![CodeInsight Pro](generated-icon.png)
 
-CodeInsight Pro is an advanced AI-powered code review tool that helps development teams and individual programmers improve code quality, identify bugs, and enhance security. Leveraging state-of-the-art AI technology, this platform provides comprehensive analysis and actionable recommendations for your code.
+## 🚀 Features
 
-## 🚀 Key Features
+- **AI-Powered Analysis**: Intelligent code review using advanced AI models
+- **GitLab Integration**: Seamless integration with GitLab merge requests
+- **Multi-Language Support**: Supports multiple programming languages
+- **Quality Metrics**: Detailed code quality and complexity analysis
+- **Security Scanning**: Identifies potential security vulnerabilities
+- **Interactive Reports**: Generate detailed PDF and text reports
 
-- **Intelligent Code Analysis**: Identify bugs, security vulnerabilities, and performance issues before they reach production
-- **Multi-language Support**: Supports JavaScript, Python, Java, C++, and more programming languages
-- **Interactive AI Assistant**: Chat with our AI to understand issues and get personalized recommendations
-- **Detailed Metrics**: Get actionable insights with quality scores across maintainability, performance, and security
-- **Export Options**: Generate detailed PDF and text reports for documentation and sharing
-- **Review History**: Track improvements over time with a complete history of all code reviews
+## 🛠️ Tech Stack
 
-## 🔧 Enterprise Solutions
+- **Frontend**: React + TypeScript + Vite
+- **Backend**: Node.js + Express
+- **AI Integration**: Hugging Face API
+- **Database**: PostgreSQL with Drizzle ORM
+- **UI Components**: Tailwind CSS + shadcn/ui
 
-CodeInsight Pro is designed to seamlessly integrate into your enterprise development workflow:
-
-- **CI/CD Integration**: Automate code reviews in your CI/CD pipeline
-- **Team Collaboration**: Share and discuss reviews with team members
-- **Custom Rules**: Define organization-specific coding standards
-- **SSO Authentication**: Enterprise-grade security with Single Sign-On
-- **API Access**: Integrate with your existing tools through our robust API
-- **Compliance Reporting**: Generate reports for compliance with industry standards
-
-## 📊 Benefits
-
-- **Reduce Development Costs**: Catch bugs early in the development cycle
-- **Improve Code Quality**: Consistent code quality across your entire codebase
-- **Accelerate Development**: Receive instant feedback without waiting for manual reviews
-- **Enhance Security**: Identify and fix security vulnerabilities before deployment
-- **Continuous Learning**: Help your team improve coding practices with personalized recommendations
-
-## 💻 Getting Started
-
-### Prerequisites
-
-- Node.js 16.x or higher
-- OpenAI API key for advanced AI features
-
-### Installation
+## 💻 Local Development Setup
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-organization/codeinsight-pro.git
-   cd codeinsight-pro
+   git clone https://github.com/yourusername/ai-powered-code-reviewer.git
+   cd ai-powered-code-reviewer
    ```
 
 2. Install dependencies:
@@ -52,45 +35,115 @@ CodeInsight Pro is designed to seamlessly integrate into your enterprise develop
    npm install
    ```
 
-3. Set up your environment variables:
+3. Set up environment variables:
+   Create a `.env` file with:
    ```
-   OPENAI_API_KEY=your_openai_api_key
+   HUGGINGFACE_API_KEY=your_huggingface_api_key
+   GITLAB_API_TOKEN=your_gitlab_token
+   DATABASE_URL=your_database_url
    ```
 
-4. Start the application:
+4. Start the development server:
    ```bash
    npm run dev
    ```
 
-5. Open your browser and navigate to `http://localhost:3000`
+The application will be available at `http://localhost:5000`
 
-## 📈 Demo
+## 🔄 DevOps Implementation
 
-![Demo Image](https://example.com/demo-image.png)
+### CI/CD Pipeline
 
-Visit our [interactive demo](https://example.com/demo) to see CodeInsight Pro in action!
+We use GitLab CI/CD for automated testing and deployment. Here's the pipeline structure:
 
-## 🛠️ Technology Stack
+1. **Build Stage**
+   - Lint code
+   - Run unit tests
+   - Build frontend assets
 
-- **Frontend**: React, TypeScript, TailwindCSS
-- **Backend**: Node.js, Express
-- **AI Integration**: OpenAI API
-- **Data Storage**: PostgreSQL (optional)
+2. **Test Stage**
+   - Run integration tests
+   - Run security scans
+   - Check code coverage
 
-## 🤝 Support & Enterprise Plans
+3. **Deploy Stage**
+   - Deploy to staging
+   - Run smoke tests
+   - Deploy to production
 
-CodeInsight Pro offers various support and enterprise plans:
+### Deployment
 
-- **Basic Plan**: Individual developers and small teams
-- **Pro Plan**: Growing development teams
-- **Enterprise Plan**: Large organizations with custom requirements
+The application can be deployed on Replit:
 
-For pricing and detailed feature comparison, visit [our pricing page](https://example.com/pricing).
+1. Import the repository to Replit
+2. Configure environment variables in Replit Secrets
+3. Use the Deploy button to publish your changes
+
+### Monitoring
+
+- Application logs through Replit's console
+- Performance metrics via built-in analytics
+- Error tracking and reporting
+
+## 🏗️ Project Structure
+
+```
+├── client/           # Frontend React application
+│   ├── src/
+│   │   ├── components/  # UI components
+│   │   ├── hooks/      # Custom React hooks
+│   │   ├── lib/        # Utility functions
+│   │   └── pages/      # Page components
+├── server/           # Backend Express server
+│   ├── ai.ts        # AI integration
+│   ├── gitlab.ts    # GitLab API integration
+│   └── routes.ts    # API routes
+└── shared/          # Shared types and schemas
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## 📋 API Documentation
+
+### Code Review Endpoint
+```
+POST /api/review
+Body: {
+  "language": "python",
+  "code": "...",
+  "gitlabProjectId": 123,
+  "gitlabMergeRequestId": 456
+}
+```
+
+### GitLab Integration
+```
+POST /api/gitlab/connect
+Body: {
+  "token": "your_gitlab_token"
+}
+```
 
 ## 📄 License
 
-CodeInsight Pro is available under a commercial license. Contact our [sales team](mailto:sales@example.com) for more information.
+MIT License - See LICENSE file for details
+
+## 🔐 Security
+
+- All API keys are stored securely
+- GitLab tokens are encrypted
+- Regular security audits
+- Automated vulnerability scanning
+
+## 📞 Support
+
+For support, please open an issue in the GitHub repository.
 
 ---
 
-© 2025 CodeInsight Pro. All rights reserved.
+© 2024 AI-Powered Code Reviewer. All rights reserved.
